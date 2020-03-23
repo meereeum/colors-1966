@@ -24,8 +24,31 @@ h2 {
     font-stretch: extra-expanded;
 }
 
+img {
+    width: 200px;
+}
+
 div {
     font-size: 28px;
+}
+
+p {
+    color: #f7f7f7;
+}
+
+#container {
+    display: flex;
+}
+
+#colorwords {
+    margin-bottom: 50px;
+}
+
+#colorbox {
+    /*float: left;*/
+    flex: 3 700px;
+    max-width: 750px;
+    /* width: 800px; */
 }
 
 #colorchips {
@@ -34,12 +57,8 @@ div {
     max-width: 500px;
     */
     margin-top: 20px;
-}
-
-#colorbox {
-    float: left;
-    width: 800px;
-    margin-bottom: 5px;
+    flex: 1; /* 106px; */
+    /* max-width: 220px; */
 }
 
 .paintChipOuter {
@@ -47,7 +66,6 @@ div {
     height: 7vh;
     width: 5vh;
     */
-    position: relative;
     height: 125px; */ 150px; */
     width: 100px;
     box-shadow: 5px 5px #000000;
@@ -56,11 +74,22 @@ div {
     /*background-color: white;*/
 }
 
+.paintChipInnerBox {
+    /*
+    height: 5vh;
+    width: 5vh;
+    */
+    height: 100px;
+    width: 100px;
+    z-index: 1;
+    position: relative; /* so that transparency can be "absolute"ly aligned */
+}
+
 .paintChipTransparency {
     position: absolute;
     top: 0;
     left: 0;
-    height: 100px; /* 100%; */
+    height: 100%;
     width: 100%;
     background-color: rgba(0,0,0,0);
 }
@@ -75,10 +104,9 @@ div {
     /* just diag */
     background-image: repeating-linear-gradient(135deg,
         rgba(0, 0, 0, 0), rgba(0, 0, 0, 0) 9px  /* clear */,
-        rgba(107, 107, 107) 9px, rgba(107, 107, 107) 10.5px /* lines */ );
+        rgba(119, 119, 119) 9px, rgba(119, 119, 119) 10.5px /* lines */ );
     z-index: 10;
 }
-
 .active {
     background-image: repeating-linear-gradient(135deg,
         rgba(0, 0, 0, 0), rgba(0, 0, 0, 0) 9px /* clear */,
@@ -86,15 +114,6 @@ div {
     z-index: 10;
 }
 
-.paintChipInnerBox {
-    /*
-    height: 5vh;
-    width: 5vh;
-    */
-    height: 100px;
-    width: 100px;
-    z-index: 1;
-}
 
 .paintChipInnerText {
     /*
