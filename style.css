@@ -36,6 +36,11 @@ p {
     color: #f7f7f7;
 }
 
+#footer {
+    font-size: 24px;
+    font-family: bodoni-light;
+}
+
 #container {
     display: flex;
 }
@@ -48,6 +53,7 @@ p {
     /*float: left;*/
     flex: 3 700px;
     max-width: 750px;
+    margin-right: 20px;
     /* width: 800px; */
 }
 
