@@ -1,0 +1,114 @@
+@font-face {
+    font-family: bodoni;
+    src: url('fonts/Bodoni-36-Fatface-Italic.ttf') format('opentype');
+}
+@font-face {
+    font-family: bodoni-light;
+    src: url('fonts/Bodoni-36-Book.ttf') format('opentype');
+}
+
+/*whole page font*/
+body
+{
+    font-family: bodoni;
+    color: #f8f8ff; /* ghost white */
+}
+
+h1 {
+    font-size: 50px;
+    font-stretch: extra-expanded;
+}
+
+h2 {
+    font-size: 24px;
+    font-stretch: extra-expanded;
+}
+
+div {
+    font-size: 28px;
+}
+
+#colorchips {
+    /*
+    float: inline-start;
+    max-width: 500px;
+    */
+    margin-top: 20px;
+}
+
+#colorbox {
+    float: left;
+    width: 800px;
+    margin-bottom: 5px;
+}
+
+.paintChipOuter {
+    /*
+    height: 7vh;
+    width: 5vh;
+    */
+    position: relative;
+    height: 125px; */ 150px; */
+    width: 100px;
+    box-shadow: 5px 5px #000000;
+    float: left;
+    margin: 5px;
+    /*background-color: white;*/
+}
+
+.paintChipTransparency {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100px; /* 100%; */
+    width: 100%;
+    background-color: rgba(0,0,0,0);
+}
+.paintChipTransparency:hover {
+    /*
+    background: linear-gradient(45deg, black 25%, transparent 25%, transparent 75%, black  75%, black), linear-gradient(45deg, black 25%, transparent 25%, transparent 75%, black 75%, black);
+    /* crosshatch */
+    /*
+    background-image: repeating-linear-gradient(135deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3) 9px,
+                                                rgba(255, 255, 255, 0.3) 9px, rgba(255, 255, 255, 0.3) 10px), repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3) 9px, rgba(255, 255, 255, 0.3) 9px, rgba(255, 255, 255, 0.3) 10px);
+    */
+    /* just diag */
+    background-image: repeating-linear-gradient(135deg,
+        rgba(0, 0, 0, 0), rgba(0, 0, 0, 0) 9px  /* clear */,
+        rgba(107, 107, 107) 9px, rgba(107, 107, 107) 10.5px /* lines */ );
+    z-index: 10;
+}
+
+.active {
+    background-image: repeating-linear-gradient(135deg,
+        rgba(0, 0, 0, 0), rgba(0, 0, 0, 0) 9px /* clear */,
+        rgba(0, 0, 0) 9px, rgba(0, 0, 0) 10.5px /* lines */ );
+    z-index: 10;
+}
+
+.paintChipInnerBox {
+    /*
+    height: 5vh;
+    width: 5vh;
+    */
+    height: 100px;
+    width: 100px;
+    z-index: 1;
+}
+
+.paintChipInnerText {
+    /*
+    height: 2vh;
+    width: 5vh;
+    */
+    /* height: 50px; */
+    height: 25px;
+    width: 100px;
+    background-color: white;
+    color: #000000;
+    font-size: 14px;
+    font-family: bodoni-light;
+    box-sizing: border-box; /* don't let padding mess w/size */
+    padding-left: 5px;
+    z-index: 1;
+}
