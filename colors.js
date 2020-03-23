@@ -2,6 +2,8 @@ var colorname=document.getElementById("colorname");
 var colorwords=document.getElementById("colorwords");
 var colorchips=document.getElementById("colorchips");
 
+var stylesheet = document.styleSheets[0]
+
 var colormap = {
     "olive": "#556b2f",
     "lavender": "#967bb6",
@@ -63,7 +65,7 @@ function deactivate(paintChip) {
 }
 
 // switch b/w colors
-function updateColor(paintChip, fcolor) {
+function updateColor(paintChip, fcolor, hex) {
     let color = fcolor.replace(/^[0-9]*_/, '');
 
     colorname.innerText = color;
@@ -88,6 +90,20 @@ function updateColor(paintChip, fcolor) {
     deactivate(SELECTED); // must deactive before resetting SELECTED
     activate(paintChip);
 
+    // reverse selection mode
+    // via https://stackoverflow.com/a/3428066
+    // use insertRule() for standards, addRule() for IE (doesn't have ::selection)
+    let TYPES = ['-moz-selection', 'selection', '-webkit-selection']
+    if ("insertRule" in stylesheet) {
+        for (i=0; i < TYPES.length; i++) {
+            if (stylesheet.cssRules[i].cssText.startsWith('.dynamicHighlight')) { // make sure rule has already been added
+                stylesheet.deleteRule(i);
+            }
+            stylesheet.insertRule('.dynamicHighlight::' + TYPES[i] + '{ background: white; color: ' + hex + '; }', 0);
+        }
+    };
+
+    // fade
     transitionBgColor(colormap[color]);
 }
 
@@ -119,13 +135,13 @@ function makePaintChip(color, hex) {
 
 var colors = Object.keys(colormap)
 for (i=0; i < colors.length; i++) {
-    let k = colors[i];
-    let v = colormap[k];
+    let k = colors[i];   // color title
+    let v = colormap[k]; // hex
     let fcolor = pad2(i + 1) + '_' + k; // numbered from 1
 
     let paintChip = makePaintChip(k, v);
-    paintChip.onmousedown = function(){ updateColor(paintChip, fcolor); };
+    paintChip.onmousedown = function(){ updateColor(paintChip, fcolor, v); };
 
     colorchips.append(paintChip);
 }
-updateColor(colorchips.firstChild, '01_olive')
+updateColor(colorchips.firstChild, '01_olive', colormap[colors[0]])

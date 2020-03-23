@@ -21,11 +21,6 @@ h1 {
     font-stretch: extra-expanded;
 }
 
-h2 {
-    font-size: 24px;
-    font-stretch: extra-expanded;
-}
-
 img {
     width: 200px;
 }
@@ -74,7 +69,7 @@ p {
     height: 7vh;
     width: 5vh;
     */
-    height: 125px; */ 150px; */
+    height: 125px; /* 150px; */
     width: 100px;
     box-shadow: 5px 5px #000000;
     float: left;
@@ -122,7 +117,6 @@ p {
     z-index: 10;
 }
 
-
 .paintChipInnerText {
     /*
     height: 2vh;
@@ -138,4 +132,16 @@ p {
     box-sizing: border-box; /* don't let padding mess w/size */
     padding-left: 5px;
     z-index: 1;
+}
+.paintChipInnerText::-moz-selection {
+    background: black;
+    color: white;
+}
+.paintChipInnerText::selection {
+    background: black;
+    color: white;
+}
+.paintChipInnerText::-webkit-selection {
+    background: black;
+    color: white;
 }
