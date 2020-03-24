@@ -166,3 +166,18 @@ a.dynamicHighlight:hover
     background: black;
     color: white;
 }
+
+.loopy {
+    animation: fleshLoop 5s infinite linear;
+}
+@keyframes fleshLoop {
+    25% {
+        background-color: #e9d8a1;
+    }
+    75% {
+        background-color: #442d26;
+    }
+    100% {
+        background-color: #e9d8a1;
+    }
+}
