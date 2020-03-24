@@ -33,64 +33,200 @@ const colormap = {
     "rosey": "#da8c9b",
     "hazel": "#86993d",
     "mauve": "#b47477",
-    "fuschia": "#ff77ff", // #dd7d98
+    "fuchsia": "#ff77ff", // #dd7d98
     "sepia": "#ac8760",
     "nutria": "#af8b71", // #ccbc9c
     "cerise": "#d65c7a",
     "grey": "#b5b5b5",
     "coral": "#f09d8a"
+};
+
+
+// CSS utils
+const PREFIXES = ['',          // IE 10+, Fx29+
+                  '-moz-',     // Fx 5+
+                  '-webkit-']; // Safari 4+
+                  // '-o-'];   // Opera 12+ <-- insertRule doesn't like this
+
+const ruleAdder = ("insertRule" in stylesheet)?
+    function(rule) { stylesheet.insertRule(rule); } : // standards
+    function(rule) { stylesheet.addRule(rule); };     // dumb ol' IE
+
+var timer = null;
+var nticks = 1000;
+var currPct = 0;
+var keyframesRule = null;
+
+function findKeyframesRule(rule) {
+    let cssRules = stylesheet.cssRules
+    let keyframesRuleArr = [window.CSSRule.KEYFRAMES_RULE,
+                            window.CSSRule.WEBKIT_KEYFRAMES_RULE]
+
+    for (i = 0; i < cssRules.length; i++) {
+        if (keyframesRuleArr.includes(cssRules[i].type) &&
+            cssRules[i].name == rule) {
+            return stylesheet.cssRules[i];
+      }
+    };
+}
+
+function getClosestKeyframe(pct, keyframesRule) {
+    let cssRules = keyframesRule.cssRules
+    let dist = 101
+    let closestFrame = null
+
+    for (i = 0; i < cssRules.length; i++) {
+        let frame = cssRules[i]
+        let rawPcts = frame.keyText.split(',') // e.g. 0%, 100%
+
+        for (j = 0; j < rawPcts.length; j++) {
+            let keyPct = Number.parseFloat(rawPcts[j]);
+            let keyDist = Math.abs(pct - keyPct);
+
+            if (keyDist < dist) {
+                dist = keyDist;
+                closestFrame = frame;
+            };
+        };
+    };
+    return closestFrame;
+}
+
+function getBookendingKeyframes(pct, keyframesRule) {
+    let cssRules = keyframesRule.cssRules
+
+    let beforeDist = 101
+    let beforeFrame = null
+    let afterDist = -101
+    let afterFrame = null
+
+    for (i = 0; i < cssRules.length; i++) {
+        let frame = cssRules[i]
+        let rawPcts = frame.keyText.split(',') // e.g. 0%, 100%
+
+        for (j = 0; j < rawPcts.length; j++) {
+            let keyPct = Number.parseFloat(rawPcts[j]);
+            let keyDist = pct - keyPct;
+
+            if ((keyDist >= 0) && (keyDist < beforeDist)) {
+                beforeDist = keyDist;
+                beforeFrame = frame;
+            };
+            if ((keyDist <= 0) && (keyDist > afterDist)) {
+                afterDist = keyDist;
+                afterFrame = frame;
+            };
+        };
+    };
+    let pctBetween = beforeDist / (beforeDist + Math.abs(afterDist));
+
+    return {'beforeFrame': beforeFrame,
+            'afterFrame': afterFrame,
+            'pctBetween': pctBetween};
+}
+
+function toArr(strRGB) {
+    let arr = strRGB.replace(/[^0-9,]/g,'') // comma-sep numbers only
+                    .split(',')
+                    .map(Number.parseFloat);
+    return arr;
+}
+
+function computeTransitionalBgColor(pct, keyframesRule) {
+    let obj = getBookendingKeyframes(pct, keyframesRule);
+
+    let beforeColor = obj['beforeFrame'].style.backgroundColor;
+    let afterColor = obj['afterFrame'].style.backgroundColor;
+    let fraction = obj['pctBetween'];
+
+    if (isNaN(fraction)) { // exactly at transition
+        return beforeColor;
+    };
+
+    let beforeRGB = toArr(beforeColor);
+    let afterRGB = toArr(afterColor);
+
+    console.log(keyframesRule);
+    console.log(pct);
+    console.log('before', beforeRGB);
+    console.log('after', afterRGB);
+    console.log(fraction);
+
+    // linearly interpolate rgb
+    let arrRGB = [];
+    for (i = 0; i < beforeRGB.length; i++) {
+        arrRGB[i] = beforeRGB[i] + fraction * (afterRGB[i] - beforeRGB[i]);
+    };
+    console.log(arrRGB);
+    return 'rgb(' + arrRGB.join(', ') + ')';
 }
 
 
 // where necessary, create looping hex animation corresponding to `color`
-var ruleAdder = ("insertRule" in stylesheet)?
-    function(rule) { stylesheet.insertRule(rule); } : // standards
-    function(rule) { stylesheet.addRule(rule); };     // dumb ol' IE
+function chooseRandom(list) {
+    return list[Math.floor((Math.random() * list.length))];
+}
+function shuffle(unshuffled) {
+    let shuffled = (unshuffled
+      .map((a) => ({sort: Math.random(), value: a}))
+      .sort((a, b) => a.sort - b.sort)
+      .map((a) => a.value));
 
+    return shuffled;
+}
 function createKeyFrames(color, hexes) {
+    let animname = color + 'Loop'
+
     let n = hexes.length
     let chunksize = 100 / n
 
-    let rule = `@keyframes ${color}Loop {`
-
-    for (i=0; i <= n; i++) {
-        rule += `
-            ${(i * chunksize)}% {
-                background-color: ${hexes[i%n]};
+    let keyframeBody = ''
+    for (i=0; i < n; i++) {
+        let pct = (i == 0)? '0%, 100%' : // wrap around
+                            `${i * chunksize}%`
+        keyframeBody += `
+            ${pct} {
+                background-color: ${hexes[i]};
             }`
     }
-    rule += '}'
-    ruleAdder(rule);
+    keyframeBody += '}'
 
-    classrule = `.${color}Loopy {
-                     animation: ${color}Loop ${2.5 * n}s infinite linear;
-                 }`
-    ruleAdder(classrule);
-}
+    let animRule = `.${color}Loopy {`
+    let animRuleBody = `${animname} ${2.5 * n}s infinite linear;`
+
+    for (i=0; i < PREFIXES.length; i++) {
+        let keyframeStart = `@${PREFIXES[i]}keyframes ${animname} {`
+        ruleAdder(keyframeStart + keyframeBody);
+
+        animRule += `
+            ${PREFIXES[i]}animation: ${animRuleBody}
+        `
+    };
+    animRule += '}'
+    ruleAdder(animRule);
+};
+
 for (let [k, v] of Object.entries(colormap)) {
     if (Array.isArray(v)) {
-        createKeyFrames(k, v);
+        let vShuff = shuffle(v); // randomize animation order
+        colormap[k] = vShuff;
+        createKeyFrames(k, vShuff);
     };
 };
+
 
 // color fade
 function transitionBgColor(hex) {
     // inspired by https://codepen.io/webercoder/pen/njBDr
-    return d3.selectAll("body")
-             .transition()
-             .duration(3000)
-             .style("background-color", hex)
+    // return d3.selectAll("body")
+    //          .transition()
+    //          .duration(3000)
+    //          .style("background-color", hex)
+    document.body.style.backgroundColor = hex;
 }
 
-// function shuffle(unshuffled) {
-//     let shuffled = (unshuffled
-//       .map((a) => ({sort: Math.random(), value: a}))
-//       .sort((a, b) => a.sort - b.sort)
-//       .map((a) => a.value));
-//
-//     return shuffled;
-// }
 
+// swatch selection crosshatch
 var SELECTED = null;
 function activate(paintChip) {
     let transparency = paintChip.getElementsByClassName('paintChipTransparency')[0];
@@ -153,24 +289,78 @@ function updateColor(paintChip, fcolor) {
 
     // fade
     if (Array.isArray(hex)) { // multiple colors
-        transitionBgColor(hex[0])
-            .on("end", function() { // wait for transition to end before beginning loop
-                document.body.classList.add(color + 'Loopy');
-            });
+        // TODO: cross-browserify
+        document.body.ontransitionend = () => { // wait for transition to end before beginning loop
+            currPct = 0 // reset anew;
+            keyframesRule = findKeyframesRule(color + 'Loop');
+            let secsPerLoop = 2.5 * keyframesRule.cssRules.length;
+            timer = window.setInterval(() => {
+                // increment current percentage thru keyrule
+                currPct = (currPct < nticks)? currPct + 1 : 0;
+                // console.log('i: ', currPct);
+            }, secsPerLoop * 1000 / nticks); // milliseconds per loop tick = (s / loop) * (1000 ms / s) * (1 cycle / 100 ticks)
+
+            document.body.classList.add(color + 'Loopy');
+            document.body.style.animationPlayState = 'running';
+        };
+        transitionBgColor(hex[0]);
+        // currPct = 0 // reset anew;
+        // keyframesRule = findKeyframesRule(color + 'Loop');
+        // let secsPerLoop = 2.5 * keyframesRule.cssRules.length;
+        // window.setInterval(() => {
+        //     // increment current percentage thru keyrule
+        //     currPct = (currPct < 100)? currPct + 1 : 0;
+        // }, secsPerLoop * 10 - 1); // milliseconds per loop tick = (s / loop) * (1000 ms / s) * (1 cycle / 100 ticks)
+        //
+        // transitionBgColor(hex[0])
+        //     .on("end", function() { // wait for transition to end before beginning loop
+        //             document.body.classList.add(color + 'Loopy');
+        //             document.body.style.animationPlayState = 'running';
+        //     });
     }
     else {
-        transitionBgColor(hex);
+        if (document.body.style.animationPlayState == 'running') {
+            document.body.classList.add('notransition'); // temporarily disable
+
+            document.body.style.animationPlayState = 'paused';
+            document.body.ontransitionend = () => {}; // remove hook
+            // window.setInterval(() => {}, 0); // stop timing
+            window.clearInterval(timer);
+
+            document.body.className = document.body.className
+                .replace(/ *[a-z]*Loopy */, '');      // remove, no matter the name of the `color`Loop
+
+            console.log('preset: ', document.body.style.backgroundColor)
+            console.log('computed: ', window.getComputedStyle(document.body)['background-color']);
+
+            let frame = getClosestKeyframe(currPct / nticks * 100, keyframesRule)
+            console.log('myComputedClosest: ', frame.style.backgroundColor);
+            // document.body.style.backgroundColor = frame.style.backgroundColor;
+
+            let rgb = computeTransitionalBgColor(currPct / nticks * 100, keyframesRule)
+            console.log('myComputedTransitional: ', rgb);
+
+            // document.body.style.backgroundColor = window.getComputedStyle(document.body)['background-color'];// rgb;
+
+            document.body.classList.remove('notransition'); // re-enable
+
+            console.log('now set: ', document.body.style.backgroundColor);
+
+            // console.log(document.body.style.backgroundColor);
+            // document.body.style.backgroundColor = window.getComputedStyle(document.body)['background-color'];
+            // console.log('--> ', document.body.style.backgroundColor);
+            // console.log(document.body.style);
+        }
         document.body.className = document.body.className
-            .replace(/ *[a-z]*Loopy */, '') // remove, no matter the name of the `color`Loop
+            .replace(/ *[a-z]*Loopy */, '');      // remove, no matter the name of the `color`Loop
+        transitionBgColor(hex);
     }
 }
+
 
 // create color swatches
 function pad2(n) {
     return (n < 10 ? '0' : '') + n;
-}
-function chooseRandom(list) {
-    return list[Math.floor((Math.random() * list.length))];
 }
 function makeClassyDiv(cls) {
     let div = document.createElement('div');
