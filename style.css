@@ -171,10 +171,10 @@ a.dynamicHighlight:hover
     animation: fleshLoop 5s infinite linear;
 }
 @keyframes fleshLoop {
-    25% {
+    0% {
         background-color: #e9d8a1;
     }
-    75% {
+    50% {
         background-color: #442d26;
     }
     100% {
