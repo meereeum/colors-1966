@@ -1,10 +1,10 @@
-var colorname=document.getElementById("colorname");
-var colorwords=document.getElementById("colorwords");
-var colorchips=document.getElementById("colorchips");
+const colorname=document.getElementById("colorname");
+const colorwords=document.getElementById("colorwords");
+const colorchips=document.getElementById("colorchips");
 
-var stylesheet = document.styleSheets[0]
+const stylesheet = document.styleSheets[0];
 
-var colormap = {
+const colormap = {
     "olive": "#556b2f",
     "lavender": "#967bb6",
     "burgundy": "#6e0a1e",
@@ -16,7 +16,7 @@ var colormap = {
     "chartreuse": "#7fff00",
     "turquoise": "#43e8d8",
     "white": "#ffffff",
-    "flesh": ["#e9d8a1", "#442d26"],
+    "flesh": ["#e9d8a1", "#442d26", "#f1c27d", "#ffdbac", "#c68642", "#8d5524", "#e0ac69", "#260701"],
     "azure": "#2b9890",
     "puce": "#c97c9b",
     "magenta": "#953d55",
@@ -104,6 +104,7 @@ function deactivate(paintChip) {
     }
 }
 
+
 // switch b/w colors
 function updateColor(paintChip, fcolor) {
     let color = fcolor.replace(/^[0-9]*_/, '');
@@ -135,16 +136,15 @@ function updateColor(paintChip, fcolor) {
     // reverse selection mode
     // via https://stackoverflow.com/a/3428066
     let bghighlight = (color == 'white')? 'black' : 'white';
-    let fghighlight = (color == 'white')? 'white' : hex;
+    let fghighlight = (color == 'white')? 'white' : (Array.isArray(hex))? chooseRandom(hex) : hex;
 
-    let TYPES = ['-moz-selection', 'selection', '-webkit-selection']
     // use insertRule() for standards, addRule() for IE (doesn't have ::selection)
     if ("insertRule" in stylesheet) {
-        for (i=0; i < TYPES.length; i++) {
+        for (i=0; i < PREFIXES.length; i++) {
             if (stylesheet.cssRules[i].cssText.startsWith('.dynamicHighlight')) { // make sure rule has already been added
                 stylesheet.deleteRule(i);
             }
-            stylesheet.insertRule(`.dynamicHighlight::${TYPES[i]} {
+            stylesheet.insertRule(`.dynamicHighlight::${PREFIXES[i]}selection {
                                        background: ${bghighlight};
                                        color: ${fghighlight};
                                    }`, 0);
@@ -200,7 +200,9 @@ function makePaintChip(color, hex) {
     return paintChip;
 }
 
-var colors = Object.keys(colormap)
+
+// let there be colors
+const colors = Object.keys(colormap)
 for (i=0; i < colors.length; i++) {
     let k = colors[i];   // color title
     let v = colormap[k]; // hex
