@@ -16,7 +16,6 @@ var colormap = {
     "chartreuse": "#7fff00",
     "turquoise": "#43e8d8",
     "white": "#ffffff",
-    // "flesh": "#e9d8a1",
     "flesh": ["#e9d8a1", "#442d26"],
     "azure": "#2b9890",
     "puce": "#c97c9b",
@@ -42,79 +41,55 @@ var colormap = {
     "coral": "#f09d8a"
 }
 
+
+// where necessary, create looping hex animation corresponding to `color`
+var ruleAdder = ("insertRule" in stylesheet)?
+    function(rule) { stylesheet.insertRule(rule); } : // standards
+    function(rule) { stylesheet.addRule(rule); };     // dumb ol' IE
+
+function createKeyFrames(color, hexes) {
+    let n = hexes.length
+    let chunksize = 100 / n
+
+    let rule = `@keyframes ${color}Loop {`
+
+    for (i=0; i <= n; i++) {
+        rule += `
+            ${(i * chunksize)}% {
+                background-color: ${hexes[i%n]};
+            }`
+    }
+    rule += '}'
+    ruleAdder(rule);
+
+    classrule = `.${color}Loopy {
+                     animation: ${color}Loop ${2.5 * n}s infinite linear;
+                 }`
+    ruleAdder(classrule);
+}
+for (let [k, v] of Object.entries(colormap)) {
+    if (Array.isArray(v)) {
+        createKeyFrames(k, v);
+    };
+};
+
 // color fade
 function transitionBgColor(hex) {
     // inspired by https://codepen.io/webercoder/pen/njBDr
-    d3.selectAll("body")
-      .transition()
-      .duration(3000)
-      .style("background-color", hex);
+    return d3.selectAll("body")
+             .transition()
+             .duration(3000)
+             .style("background-color", hex)
 }
 
-function shuffle(unshuffled) {
-    let shuffled = (unshuffled
-      .map((a) => ({sort: Math.random(), value: a}))
-      .sort((a, b) => a.sort - b.sort)
-      .map((a) => a.value));
-
-    return shuffled;
-}
-function loopPaintChipColor(chip, hexes) {
-    let shuffHexes = shuffle(hexes)
-
-    console.log(shuffHexes);
-
-    d3.select(chip)
-      .transition()
-      .duration(3000)
-      .style("background-color", shuffHexes[0])
-      .transition()
-      .duration(3000)
-      .delay(6000)
-      .style("background-color", shuffHexes[1]);
-
-    window.setTimeout(3000 * hexes.length,
-                      function() { loopPaintChipColor(chip, hexes); });
-
-    // let selection = d3.select(chip)
-    // let transitions = []
-    // for (i=0; i < hexes.length; i++) {
-    //     console.log(hexes[i])
-    //     transitions[i] = function() {
-    //         return selection
-    //                 .transition()
-    //                 .duration(3000)
-    //                 .style("background-color", hexes[i]);
-    //     }
-    // }
-    // transitions = shuffle(transitions)
-
-    // function run(i) {
-    //     if (i < transitions.length - 1) {
-    //         i += 1;
-    //         return transitions[i]().on("end", function() { run(i); });
-    //     }
-    //     else {
-    //         // i = 0;
-    //         // transitions = shuffle(transitions);
-    //         return true
-    //     }
-    //     // return transitions[i]().on("end", function() { run(i); });
-    // }
-    // run(0);
-        // let selection = d3.select(chip)
-
-        // for (i=0; i < hexes.length; i++) {
-        //     console.log(shuffHexes[i])
-        //     selection = selection
-        //         .transition()
-        //         .duration(3000)
-        //         .style("background-color", shuffHexes[i])
-        //         .delay( 3000 * i )
-        // }
-        // selection.on("end", oneCycle)
-    // oneCycle();
-}
+// function shuffle(unshuffled) {
+//     let shuffled = (unshuffled
+//       .map((a) => ({sort: Math.random(), value: a}))
+//       .sort((a, b) => a.sort - b.sort)
+//       .map((a) => a.value));
+//
+//     return shuffled;
+// }
 
 var SELECTED = null;
 function activate(paintChip) {
@@ -169,31 +144,28 @@ function updateColor(paintChip, fcolor) {
             if (stylesheet.cssRules[i].cssText.startsWith('.dynamicHighlight')) { // make sure rule has already been added
                 stylesheet.deleteRule(i);
             }
-            stylesheet.insertRule('.dynamicHighlight::' + TYPES[i] +
-                                  '{ background: ' + bghighlight + '; color: ' + fghighlight + '; }', 0);
+            stylesheet.insertRule(`.dynamicHighlight::${TYPES[i]} {
+                                       background: ${bghighlight};
+                                       color: ${fghighlight};
+                                   }`, 0);
         }
     };
 
     // fade
     if (Array.isArray(hex)) { // multiple colors
-        transitionBgColor(hex[0]);
-        document.body.classList.add('loopy');
+        transitionBgColor(hex[0])
+            .on("end", function() { // wait for transition to end before beginning loop
+                document.body.classList.add(color + 'Loopy');
+            });
     }
     else {
         transitionBgColor(hex);
-        document.body.classList.remove('loopy');
+        document.body.className = document.body.className
+            .replace(/ *[a-z]*Loopy */, '') // remove, no matter the name of the `color`Loop
     }
-
-    // transitionBgColor(colormap[color]);
-    // if (color == 'flesh') {
-    //     document.body.classList.add('loopy');
-    // }
-    // else {
-    //     document.body.classList.remove('loopy');
-    // }
 }
 
-// create colorpad
+// create color swatches
 function pad2(n) {
     return (n < 10 ? '0' : '') + n;
 }
@@ -214,10 +186,7 @@ function makePaintChip(color, hex) {
 
     if (Array.isArray(hex)) { // multiple colors
         paintChipBox.style.backgroundColor = hex[0]; // chooseRandom(hex);
-        // paintChipBox.style.animation = 'fleshLoop 2s infinite linear;';
-        paintChipBox.classList.add('loopy');
-        console.log(paintChipBox);
-        // loopPaintChipColor(paintChip, hex);
+        paintChipBox.classList.add(color + 'Loopy');
     }
     else {
         paintChipBox.style.backgroundColor = hex;
@@ -243,8 +212,3 @@ for (i=0; i < colors.length; i++) {
     colorchips.append(paintChip);
 }
 updateColor(colorchips.firstChild, '01_olive')
-
-// D3
-function getRandomInt(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
