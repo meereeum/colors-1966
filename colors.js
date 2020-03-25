@@ -338,6 +338,7 @@ function updateColor(paintChip, fcolor) {
             // document.body.style.mozAnimationPlayState = 
             // document.body.style.oAnimationPlayState = 
             // document.body.style.animationPlayState = 'paused';
+
             // document.body.style.animationPlayState = 'paused';
 
             // document.body.className = document.body.className
@@ -363,25 +364,40 @@ function updateColor(paintChip, fcolor) {
             console.log('ComputedTransitional: ', rgbComputed);
 
             document.body.ontransitionend = () => {
-                document.body.classList.remove('notransition'); // re-enable
-                //document.body.classList.remove('quicktransition'); // re-enable
-                document.body.classList.add('regtransition'); // re-enable
+                document.body.classList.remove('quicktransition'); // re-enable
+                // document.body.classList.add('regtransition'); // re-enable
                 document.body.ontransitionend = () => {};
                 console.log('3: ', document.body.style);
+
+                document.body.style.webkitAnimationPlayState = 
+                    document.body.style.mozAnimationPlayState = 
+                    document.body.style.oAnimationPlayState = 
+                    document.body.style.animationPlayState = 'paused';
+
                 transitionBgColor(hex);
                 console.log('4: ', document.body.style);
             };
 
+            document.body.style.backgroundColor = rgb;
+            document.body.classList.add('quicktransition'); // temporarily disable
+            // transitionBgColor(hex);
+
             // document.body.classList.add('notransition'); // temporarily disable
-            document.body.classList.remove('regtransition');
-            document.body.classList.add('notransition'); // temporarily disable
+            // document.body.style.backgroundColor = rgb;
+            // document.body.classList.remove('notransition'); // re-enable
+            // console.log(window.getComputedStyle(document.body));
+            // transitionBgColor(hex);
+            // console.log(window.getComputedStyle(document.body));
+
+            // document.body.classList.remove('regtransition');
             // document.body.classList.add('quicktransition'); // temporarily disable
             // console.log('1: ', document.body.style);
-            document.body.style.backgroundColor = rgb;
-            document.body.ontransitionend = () => {};
-            document.body.classList.remove('notransition'); // re-enable
-            document.body.classList.add('regtransition'); // re-enable
-            transitionBgColor(hex);
+            // document.body.style.backgroundColor = rgb;
+            // document.body.ontransitionend = () => {};
+            // document.body.classList.add('regtransition'); // re-enable
+            // console.log(window.getComputedStyle(document.body));
+            // transitionBgColor(hex);
+            // console.log(window.getComputedStyle(document.body));
             // console.log('2: ', document.body.style);
             // transitionBgColor(hex);
             // document.body.style.backgroundColor = window.getComputedStyle(document.body)['background-color'];

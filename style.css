@@ -179,10 +179,10 @@ a.dynamicHighlight:hover
 }
 
 .quicktransition {
-    transition: background-color .5s ease !important;
-    -webkit-transition: background-color .5s ease !important;
-    -moz-transition: background-color .5s ease !important;
-    -o-transition: background-color .5s ease !important;
+    transition: background-color 1s !important;
+    -webkit-transition: background-color 1s !important;
+    -moz-transition: background-color 1s !important;
+    -o-transition: background-color 1s !important;
 }
 
 .regtransition {
