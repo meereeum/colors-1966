@@ -312,6 +312,11 @@ function deactivate(paintChip) {
         transparency.classList.remove('active');
     }
 }
+function getActiveColor() {
+    let colorName = SELECTED.getElementsByClassName('paintChipInnerText')
+                        [0].innerText;
+    return colorName;
+}
 
 // switch b/w colors
 function updateColor(paintChip, fcolor) {
@@ -362,22 +367,24 @@ function updateColor(paintChip, fcolor) {
     if (Array.isArray(hex)) { // multiple colors
 
         onEvent(document.body, transitionEnd, () => { // wait for transition to end before beginning loop
-            currPct = 0; // reset anew
-            currKeyframesRule = findKeyframesRule(color + 'Loop'); // set to relevant keyframes
-            let secsPerLoop = 2.5 * currKeyframesRule.cssRules.length;
+            if (color == getActiveColor()) {
+                currPct = 0; // reset anew
+                currKeyframesRule = findKeyframesRule(color + 'Loop'); // set to relevant keyframes
+                let secsPerLoop = 2.5 * currKeyframesRule.cssRules.length;
 
-            onEvent(document.body, animationStart, () => {
-                // increment current percentage thru keyrule
-                timer = window.setInterval(() => {
-                    currPct = (currPct < nticks)? currPct + 1 : 0;
-                }, secsPerLoop * 1000 / nticks); // milliseconds per loop tick = (s / loop) * (1000 ms / s) * (1 cycle / 100 ticks)
-            });
+                onEvent(document.body, animationStart, () => {
+                    // increment current percentage thru keyrule
+                    timer = window.setInterval(() => {
+                        currPct = (currPct < nticks)? currPct + 1 : 0;
+                    }, secsPerLoop * 1000 / nticks); // milliseconds per loop tick = (s / loop) * (1000 ms / s) * (1 cycle / 100 ticks)
+                });
 
-            document.body.classList.add(color + 'Loopy');
-
-            setAnimationPlayState(document.body, 'running'); // cross-platform
-            onEvent(document.body, transitionEnd, () => {});
+                document.body.classList.add(color + 'Loopy');
+                setAnimationPlayState(document.body, 'running');
+            };
+            // else, transition interrupted before loop kicked in (so skip it!)
         });
+
         transitionBgColor(hex[0]);
 
         // d3
@@ -415,11 +422,10 @@ function updateColor(paintChip, fcolor) {
                 // document.body.style.transitionDuration = '3s';
                 // onEvent(document.body, transitionEnd, () => {});
 
-                onEvent(document.body, transitionEnd, () => {});
-                // setAnimationPlayState(document.body, 'paused'); // cross-platform
-
-                transitionBgColor(hex);
-            });
+                if (color == getActiveColor()) {
+                    transitionBgColor(hex);
+                }; // else, interrupted mid-transition (so, move on)
+            })
 
             document.body.classList.add('quickTransition'); // temporarily override transition
             document.body.style.backgroundColor = rgb;
