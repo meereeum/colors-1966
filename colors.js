@@ -381,17 +381,17 @@ function updateColor(paintChip, fcolor) {
             // console.log('ComputedTransitional: ', rgbComputed);
 
             onEvent(document.body, transitionEnd, () => {
-                document.body.classList.remove('quicktransition'); // re-enable
-                // document.body.classList.add('regtransition'); // re-enable
+                document.body.classList.remove('quickTransition'); // restore default
 
                 onEvent(document.body, transitionEnd, () => {});
-                setAnimationPlayState(document.body, 'paused'); // cross-platform
+                // setAnimationPlayState(document.body, 'paused'); // cross-platform
 
                 transitionBgColor(hex);
             });
 
+            document.body.classList.add('quickTransition'); // temporarily override transition
+            setAnimationPlayState(document.body, 'paused'); // cross-platform
             document.body.style.backgroundColor = rgb;
-            document.body.classList.add('quicktransition'); // temporarily override transition
         }
         else {
             transitionBgColor(hex);
