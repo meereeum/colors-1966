@@ -62,12 +62,12 @@ function tryAddRule(...args) {
     }
 }
 
-function titlecase (s) {
+function titlecase(s) {
     return s.charAt(0).toUpperCase() + s.substr(1).toLowerCase();
 }
 
 // inspired by https://davidwalsh.name/css-animation-callback
-function whichEvent(eventtype, eventtime){
+function whichEvent(eventtype, eventtime) {
     var t;
     let el = document.createElement('fakeelement');
     let transitions = {
@@ -82,7 +82,14 @@ function whichEvent(eventtype, eventtime){
         };
     };
 }
+const transitionStart = whichEvent('transition', 'start')
+const transitionEnd = whichEvent('transition', 'end')
+const animationStart = whichEvent('animation', 'start')
+const animationEnd = whichEvent('animation', 'end')
 
+function onEvent(elem, eventname, fn) {
+    elem.addEventListener(eventname, fn, {'once': true})
+}
 
 var timer = null;
 var nticks = 1000;
@@ -194,11 +201,11 @@ function computeTransitionalBgColor(pct, keyframesRule) {
     return 'rgb(' + arrRGB.join(', ') + ')';
 }
 
-function setAnimationPlayState(setting) {
-    document.body.style.animationPlayState =
-        document.body.style.webkitAnimationPlayState = 
-        document.body.style.mozAnimationPlayState =
-        document.body.style.oAnimationPlayState = setting;
+function setAnimationPlayState(elem, setting) {
+    elem.style.animationPlayState =
+        elem.style.webkitAnimationPlayState = 
+        elem.style.mozAnimationPlayState =
+        elem.style.oAnimationPlayState = setting;
 }
 
 
@@ -328,30 +335,25 @@ function updateColor(paintChip, fcolor) {
 
     // fade
     if (Array.isArray(hex)) { // multiple colors
-        // TODO: cross-browserify
-        // document.body.ontransitionend =
-        //      document.body.onwebkittransitionend = 
-        document.body.addEventListener(whichEvent('transition', 'end'), () => { // wait for transition to end before beginning loop
+
+        onEvent(document.body, transitionEnd, () => { // wait for transition to end before beginning loop
             currPct = 0; // reset anew;
             keyframesRule = findKeyframesRule(color + 'Loop'); // set to relevant keyframes
             let secsPerLoop = 2.5 * keyframesRule.cssRules.length;
 
-            // document.body.onanimationstart = 
-            //     document.body.onwebkitanimationstart =
-            document.body.addEventListener(whichEvent('animation', 'start'), () => {
+            onEvent(document.body, animationStart, () => {
                 // increment current percentage thru keyrule
                 timer = window.setInterval(() => {
                     currPct = (currPct < nticks)? currPct + 1 : 0;
                 }, secsPerLoop * 1000 / nticks); // milliseconds per loop tick = (s / loop) * (1000 ms / s) * (1 cycle / 100 ticks)
-            }, {'once': true});
+            });
 
             document.body.classList.add(color + 'Loopy');
-            setAnimationPlayState('running'); // cross-platform
-            // document.body.ontransitionend = 
-            //     document.body.onwebkittransitionend = () => {};
-            document.body.addEventListener(whichEvent('transition', 'end'), () => {}, {'once': true});
+
+            setAnimationPlayState(document.body, 'running'); // cross-platform
+            onEvent(document.body, transitionEnd, () => {});
             // console.log('running');
-        }, {'once': true});
+        });
         transitionBgColor(hex[0]);
 
         // d3
@@ -378,18 +380,15 @@ function updateColor(paintChip, fcolor) {
             let rgbComputed = window.getComputedStyle(document.body)['background-color'];
             // console.log('ComputedTransitional: ', rgbComputed);
 
-            // document.body.ontransitionend =
-            //     document.body.onwebkittransitionend = () => {
-            document.body.addEventListener(whichEvent('transition', 'end'), () => {
+            onEvent(document.body, transitionEnd, () => {
                 document.body.classList.remove('quicktransition'); // re-enable
                 // document.body.classList.add('regtransition'); // re-enable
-                // document.body.ontransitionend =
-                document.body.addEventListener(whichEvent('transition', 'end'), () => {}, {'once': true});
 
-                setAnimationPlayState('paused'); // cross-platform
+                onEvent(document.body, transitionEnd, () => {});
+                setAnimationPlayState(document.body, 'paused'); // cross-platform
 
                 transitionBgColor(hex);
-            }, {'once': true});
+            });
 
             document.body.style.backgroundColor = rgb;
             document.body.classList.add('quicktransition'); // temporarily override transition
