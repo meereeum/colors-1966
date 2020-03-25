@@ -66,16 +66,14 @@ function tryAddRule(...args) {
 // (necessary to make chrome fonts match ffox)
 usesWebkit = navigator.userAgent.toLowerCase().includes('webkit')
 if (usesWebkit) {
-    let h1s = document.getElementsByTagName('h1')
-    for (i=0; i < h1s.length; i++) {
-        h1s[i].classList.add('thicker');
-    };
-    let as = document.getElementsByTagName('a')
-    for (i=0; i < as.length; i++) {
-        if (as[i].classList.contains('dynamicHighlight')) { // text links only
-            as[i].classList.add('jankyDoubleLine');
-        };
-    };
+    let h1s = document.getElementsByTagName('h1');
+    Array.from(h1s)
+         .forEach(h1 => h1.classList.add('thicker'));
+
+    let as = document.getElementsByTagName('a');
+    Array.from(as)
+         .filter(a => a.classList.contains('dynamicHighlight')) // text links only
+         .forEach(a => a.classList.add('jankyDoubleLine'));
 };
 
 
@@ -85,7 +83,6 @@ function titlecase(s) {
 
 // inspired by https://davidwalsh.name/css-animation-callback
 function whichEvent(eventtype, eventtime) {
-    var t;
     let el = document.createElement('fakeelement');
     let transitions = {
       'transition': (eventtype + eventtime).toLowerCase(),                        // e.g. transitionend
@@ -93,7 +90,7 @@ function whichEvent(eventtype, eventtime) {
       'WebkitTransition': 'webkit' + titlecase(eventtype) + titlecase(eventtime), // e.g. webkitTransitionEnd
       'OTransition': 'o' + (eventtype + eventtime).toLowerCase()                  // e.g. otransitionend
     };
-    for (t in transitions) {
+    for (let t in transitions) {
         if (el.style[t] !== undefined) {
             return transitions[t];
         };
@@ -111,33 +108,29 @@ function onEvent(elem, eventname, fn) {
 var timer = null;
 var nticks = 1000;
 var currPct = 0;
-var keyframesRule = null;
+var currKeyframesRule = null;
 
 function findKeyframesRule(rule) {
-    let cssRules = stylesheet.cssRules
     let keyframesRuleArr = [window.CSSRule.KEYFRAMES_RULE,
                             window.CSSRule.WEBKIT_KEYFRAMES_RULE]
 
-    for (i = 0; i < cssRules.length; i++) {
-        if (keyframesRuleArr.includes(cssRules[i].type) &&
-            cssRules[i].name == rule) {
-            return stylesheet.cssRules[i];
-      }
-    };
+    return Array.from(stylesheet.cssRules)
+                .filter(cssRule => (keyframesRuleArr.includes(cssRule.type)
+                                    && cssRule.name == rule))
+                [0]; // b/c filter return array
 }
 
 function getClosestKeyframe(pct, keyframesRule) {
-    let cssRules = keyframesRule.cssRules
     let dist = 101
     let closestFrame = null
 
-    for (i = 0; i < cssRules.length; i++) {
-        let frame = cssRules[i]
+    for (let frame of keyframesRule.cssRules) {
+
         let rawPcts = frame.keyText.split(',') // e.g. 0%, 100%
 
-        for (j = 0; j < rawPcts.length; j++) {
-            let keyPct = Number.parseFloat(rawPcts[j]);
-            let keyDist = Math.abs(pct - keyPct);
+        for (let rawPct of rawPcts) {
+
+            let keyDist = Math.abs(pct - Number.parseFloat(rawPct));
 
             if (keyDist < dist) {
                 dist = keyDist;
@@ -149,20 +142,19 @@ function getClosestKeyframe(pct, keyframesRule) {
 }
 
 function getBookendingKeyframes(pct, keyframesRule) {
-    let cssRules = keyframesRule.cssRules
 
     let beforeDist = 101
     let beforeFrame = null
     let afterDist = -101
     let afterFrame = null
 
-    for (i = 0; i < cssRules.length; i++) {
-        let frame = cssRules[i]
+    for (let frame of keyframesRule.cssRules) {
+
         let rawPcts = frame.keyText.split(',') // e.g. 0%, 100%
 
-        for (j = 0; j < rawPcts.length; j++) {
-            let keyPct = Number.parseFloat(rawPcts[j]);
-            let keyDist = pct - keyPct;
+        for (let rawPct of rawPcts) {
+
+            let keyDist = pct - Number.parseFloat(rawPct);
 
             if ((keyDist >= 0) && (keyDist < beforeDist)) {
                 beforeDist = keyDist;
@@ -181,11 +173,37 @@ function getBookendingKeyframes(pct, keyframesRule) {
             'pctBetween': pctBetween};
 }
 
+function avgRGB(strRGBs) {
+    let colorArrs = strRGBs.map(toArr)   // "rgb()" -> [r,g,b]
+
+    let sum = colorArrs[0].map(() => 0); // zeros_like([r,g,b])
+    let avg = []
+
+    for (i=0; i < sum.length; i++) { // r,g,b
+        for (let arr of colorArrs) {
+            sum[i] += arr[i]**2;
+        };
+        avg[i] = Math.sqrt(sum[i] / colorArrs.length);
+    };
+    return toRGB(avg);
+}
+
+function computeAvgBgColor(keyframesRule) {
+    let frameRGBs = Array.from(keyframesRule.cssRules)
+                         .map(r => r.style.backgroundColor);
+    return avgRGB(frameRGBs);
+}
+
 function toArr(strRGB) {
     let arr = strRGB.replace(/[^0-9,]/g,'') // comma-sep numbers only
                     .split(',')
                     .map(Number.parseFloat);
     return arr;
+}
+
+function toRGB(arrRGB) {
+    return `rgb( ${ arrRGB.map(v => v.toFixed(0))
+                          .join(', ')} )`;
 }
 
 function computeTransitionalBgColor(pct, keyframesRule) {
@@ -202,20 +220,12 @@ function computeTransitionalBgColor(pct, keyframesRule) {
     let beforeRGB = toArr(beforeColor);
     let afterRGB = toArr(afterColor);
 
-    // console.log(keyframesRule);
-    // console.log(pct);
-    // console.log('before', beforeRGB);
-    // console.log('after', afterRGB);
-    // console.log(fraction);
-
     // linearly interpolate rgb
     let arrRGB = [];
     for (i = 0; i < beforeRGB.length; i++) {
-        arrRGB[i] = (beforeRGB[i] + fraction * (afterRGB[i] - beforeRGB[i]))
-                        .toFixed(0);
+        arrRGB[i] = beforeRGB[i] + fraction * (afterRGB[i] - beforeRGB[i]);
     };
-    // console.log(arrRGB);
-    return 'rgb(' + arrRGB.join(', ') + ')';
+    return toRGB(arrRGB);
 }
 
 function setAnimationPlayState(elem, setting) {
@@ -227,46 +237,44 @@ function setAnimationPlayState(elem, setting) {
 
 
 // where necessary, create looping hex animation corresponding to `color`
-function chooseRandom(list) {
-    return list[Math.floor((Math.random() * list.length))];
+function chooseRandom(arr) {
+    return arr[Math.floor((Math.random() * arr.length))];
 }
 function shuffle(unshuffled) {
-    let shuffled = (unshuffled
-      .map((a) => ({sort: Math.random(), value: a}))
-      .sort((a, b) => a.sort - b.sort)
-      .map((a) => a.value));
-
-    return shuffled;
+    return unshuffled
+            .map(a => ({ sort: Math.random(), value: a }))
+            .sort((a, b) => a.sort - b.sort)
+            .map(a => a.value);
 }
 function createKeyFrames(color, hexes) {
-    let animname = color + 'Loop'
+    let animname = color + 'Loop';
 
-    let n = hexes.length
-    let chunksize = 100 / n
+    let n = hexes.length;
+    let chunksize = 100 / n;
 
-    let keyframeBody = ''
+    let keyframeBody = '';
     for (i=0; i < n; i++) {
         let pct = (i == 0)? '0%, 100%' : // wrap around
-                            `${i * chunksize}%`
+                            `${i * chunksize}%`;
         keyframeBody += `
             ${pct} {
                 background-color: ${hexes[i]};
             }`
     }
-    keyframeBody += '}'
+    keyframeBody += '}';
 
-    let animRule = `.${color}Loopy {`
-    let animRuleBody = `${animname} ${2.5 * n}s infinite linear;`
+    let animRule = `.${color}Loopy {`;
+    let animRuleBody = `${animname} ${2.5 * n}s infinite linear;`;
 
     for (i=0; i < PREFIXES.length; i++) {
-        let keyframeStart = `@${PREFIXES[i]}keyframes ${animname} {`
+        let keyframeStart = `@${PREFIXES[i]}keyframes ${animname} {`;
         tryAddRule(keyframeStart + keyframeBody);
 
         animRule += `
             ${PREFIXES[i]}animation: ${animRuleBody}
-        `
+        `;
     };
-    animRule += '}'
+    animRule += '}';
     tryAddRule(animRule);
 };
 
@@ -327,10 +335,9 @@ function updateColor(paintChip, fcolor) {
     let shadow = (color == 'white')? '3px 3px 7px #000000' : '';
     colorwords.style.textShadow = shadow;
     colorname.style.textShadow = shadow;
-    ps = document.getElementsByTagName('p')
-    for (i=0; i < ps.length; i++) {
-        ps[i].style.textShadow = shadow;
-    };
+    ps = document.getElementsByTagName('p');
+    Array.from(ps)
+         .forEach(p => p.style.textShadow = shadow);
 
     // reverse selection mode
     // via https://stackoverflow.com/a/3428066
@@ -342,21 +349,21 @@ function updateColor(paintChip, fcolor) {
         for (i=0; i < PREFIXES.length; i++) {
             if (stylesheet.cssRules[i].cssText.startsWith('.dynamicHighlight')) { // make sure rule has already been added
                 stylesheet.deleteRule(i);
-            }
+            };
             tryAddRule(`.dynamicHighlight::${PREFIXES[i]}selection {
                             background: ${bghighlight};
                             color: ${fghighlight};
                         }`, 0);
-        }
+        };
     };
 
     // fade
     if (Array.isArray(hex)) { // multiple colors
 
         onEvent(document.body, transitionEnd, () => { // wait for transition to end before beginning loop
-            currPct = 0; // reset anew;
-            keyframesRule = findKeyframesRule(color + 'Loop'); // set to relevant keyframes
-            let secsPerLoop = 2.5 * keyframesRule.cssRules.length;
+            currPct = 0; // reset anew
+            currKeyframesRule = findKeyframesRule(color + 'Loop'); // set to relevant keyframes
+            let secsPerLoop = 2.5 * currKeyframesRule.cssRules.length;
 
             onEvent(document.body, animationStart, () => {
                 // increment current percentage thru keyrule
@@ -369,7 +376,6 @@ function updateColor(paintChip, fcolor) {
 
             setAnimationPlayState(document.body, 'running'); // cross-platform
             onEvent(document.body, transitionEnd, () => {});
-            // console.log('running');
         });
         transitionBgColor(hex[0]);
 
@@ -387,11 +393,14 @@ function updateColor(paintChip, fcolor) {
 
         if (document.body.style.animationPlayState == 'running') {
 
-            // let frame = getClosestKeyframe(currPct / nticks * 100, keyframesRule)
+            // let frame = getClosestKeyframe(currPct / nticks * 100, currKeyframesRule)
             // console.log('myComputedClosest: ', frame.style.backgroundColor);
 
-            let rgb = computeTransitionalBgColor(currPct / nticks * 100, keyframesRule)
+            let rgb = computeTransitionalBgColor(currPct / nticks * 100, currKeyframesRule);
             // console.log('myComputedTransitional: ', rgb);
+            
+            // let rgbAvg = computeAvgBgColor(currKeyframesRule);
+            // console.log('myComputedAvg: ', rgb);
 
             // for some reason, need this for `transitionend` to get called on time:
             let rgbComputed = window.getComputedStyle(document.body)['background-color'];
@@ -407,8 +416,9 @@ function updateColor(paintChip, fcolor) {
             });
 
             document.body.classList.add('quickTransition'); // temporarily override transition
-            setAnimationPlayState(document.body, 'paused'); // cross-platform
+            setAnimationPlayState(document.body, 'paused'); // cross-platform (if only ontransitionend, sometimes not fired)
             document.body.style.backgroundColor = rgb;
+            console.log(rgb);
         }
         else {
             transitionBgColor(hex);
@@ -434,7 +444,7 @@ function makePaintChip(color, hex) {
     let paintChipText = makeClassyDiv('paintChipInnerText');
 
     if (Array.isArray(hex)) { // multiple colors
-        paintChipBox.style.backgroundColor = hex[0]; // chooseRandom(hex);
+        paintChipBox.style.backgroundColor = hex[0];
         paintChipBox.classList.add(color + 'Loopy');
     }
     else {
@@ -458,7 +468,7 @@ for (i=0; i < colors.length; i++) {
     let fcolor = pad2(i + 1) + '_' + k; // numbered from 1
 
     let paintChip = makePaintChip(k, v);
-    paintChip.onmousedown = function(){ updateColor(paintChip, fcolor); };
+    paintChip.onmousedown = () => updateColor(paintChip, fcolor);
 
     colorchips.append(paintChip);
 }
