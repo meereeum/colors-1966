@@ -105,6 +105,14 @@ function onEvent(elem, eventname, fn) {
     elem.addEventListener(eventname, fn, {'once': true})
 }
 
+function setAnimationPlayState(elem, setting) { // cross-platform
+    elem.style.animationPlayState =
+        elem.style.webkitAnimationPlayState =
+        elem.style.mozAnimationPlayState =
+        elem.style.oAnimationPlayState = setting;
+}
+
+
 var timer = null;
 var nticks = 1000;
 var currPct = 0;
@@ -173,27 +181,6 @@ function getBookendingKeyframes(pct, keyframesRule) {
             'pctBetween': pctBetween};
 }
 
-function avgRGB(strRGBs) {
-    let colorArrs = strRGBs.map(toArr)   // "rgb()" -> [r,g,b]
-
-    let sum = colorArrs[0].map(() => 0); // zeros_like([r,g,b])
-    let avg = []
-
-    for (i=0; i < sum.length; i++) { // r,g,b
-        for (let arr of colorArrs) {
-            sum[i] += arr[i]**2;
-        };
-        avg[i] = Math.sqrt(sum[i] / colorArrs.length);
-    };
-    return toRGB(avg);
-}
-
-function computeAvgBgColor(keyframesRule) {
-    let frameRGBs = Array.from(keyframesRule.cssRules)
-                         .map(r => r.style.backgroundColor);
-    return avgRGB(frameRGBs);
-}
-
 function toArr(strRGB) {
     let arr = strRGB.replace(/[^0-9,]/g,'') // comma-sep numbers only
                     .split(',')
@@ -228,11 +215,25 @@ function computeTransitionalBgColor(pct, keyframesRule) {
     return toRGB(arrRGB);
 }
 
-function setAnimationPlayState(elem, setting) {
-    elem.style.animationPlayState =
-        elem.style.webkitAnimationPlayState = 
-        elem.style.mozAnimationPlayState =
-        elem.style.oAnimationPlayState = setting;
+function avgRGB(strRGBs) {
+    let colorArrs = strRGBs.map(toArr)   // "rgb()" -> [r,g,b]
+
+    let sum = colorArrs[0].map(() => 0); // zeros_like([r,g,b])
+    let avg = []
+
+    for (i=0; i < sum.length; i++) { // r,g,b
+        for (let arr of colorArrs) {
+            sum[i] += arr[i]**2;
+        };
+        avg[i] = Math.sqrt(sum[i] / colorArrs.length);
+    };
+    return toRGB(avg);
+}
+
+function computeAvgBgColor(keyframesRule) {
+    let frameRGBs = Array.from(keyframesRule.cssRules)
+                         .map(r => r.style.backgroundColor);
+    return avgRGB(frameRGBs);
 }
 
 
@@ -387,11 +388,14 @@ function updateColor(paintChip, fcolor) {
         //     });
     }
     else {
-        window.clearInterval(timer);
+        // window.clearInterval(timer);
         document.body.className = document.body.className
             .replace(/ *[a-z]*Loopy */, ''); // remove, no matter the name of the `color`Loop
 
         if (document.body.style.animationPlayState == 'running') {
+
+            window.clearInterval(timer);
+            setAnimationPlayState(document.body, 'paused'); // (if only on transitionEnd, sometimes not fired)
 
             // let frame = getClosestKeyframe(currPct / nticks * 100, currKeyframesRule)
             // console.log('myComputedClosest: ', frame.style.backgroundColor);
@@ -408,6 +412,8 @@ function updateColor(paintChip, fcolor) {
 
             onEvent(document.body, transitionEnd, () => {
                 document.body.classList.remove('quickTransition'); // restore default
+                // document.body.style.transitionDuration = '3s';
+                // onEvent(document.body, transitionEnd, () => {});
 
                 onEvent(document.body, transitionEnd, () => {});
                 // setAnimationPlayState(document.body, 'paused'); // cross-platform
@@ -416,9 +422,16 @@ function updateColor(paintChip, fcolor) {
             });
 
             document.body.classList.add('quickTransition'); // temporarily override transition
-            setAnimationPlayState(document.body, 'paused'); // cross-platform (if only ontransitionend, sometimes not fired)
             document.body.style.backgroundColor = rgb;
             console.log(rgb);
+
+            // setAnimationPlayState(document.body, 'paused'); // (if only ontransitionend, sometimes not fired)
+
+            // document.body.style.transitionDuration = '0s';
+            // document.body.style.backgroundColor = rgb;
+            // console.log(rgb);
+            // document.body.style.transitionDuration = '3s';
+            // transitionBgColor(hex);
         }
         else {
             transitionBgColor(hex);
@@ -472,4 +485,4 @@ for (i=0; i < colors.length; i++) {
 
     colorchips.append(paintChip);
 }
-updateColor(colorchips.firstChild, '01_olive')
+updateColor(colorchips.firstChild, '01_olive');
