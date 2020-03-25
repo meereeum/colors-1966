@@ -172,8 +172,22 @@ a.dynamicHighlight:hover
 }
 
 .notransition {
-  transition: none !important;
-  -webkit-transition: none !important;
-  -moz-transition: none !important;
-  -o-transition: none !important;
+    transition: none !important;
+    -webkit-transition: none !important;
+    -moz-transition: none !important;
+    -o-transition: none !important;
+}
+
+.quicktransition {
+    transition: background-color .5s ease !important;
+    -webkit-transition: background-color .5s ease !important;
+    -moz-transition: background-color .5s ease !important;
+    -o-transition: background-color .5s ease !important;
+}
+
+.regtransition {
+    transition: background-color 3s !important;
+    -webkit-transition: background-color 3s !important;
+    -moz-transition: background-color 3s !important;
+    -o-transition: background-color 3s !important;
 }

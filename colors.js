@@ -146,18 +146,19 @@ function computeTransitionalBgColor(pct, keyframesRule) {
     let beforeRGB = toArr(beforeColor);
     let afterRGB = toArr(afterColor);
 
-    console.log(keyframesRule);
-    console.log(pct);
-    console.log('before', beforeRGB);
-    console.log('after', afterRGB);
-    console.log(fraction);
+    // console.log(keyframesRule);
+    // console.log(pct);
+    // console.log('before', beforeRGB);
+    // console.log('after', afterRGB);
+    // console.log(fraction);
 
     // linearly interpolate rgb
     let arrRGB = [];
     for (i = 0; i < beforeRGB.length; i++) {
-        arrRGB[i] = beforeRGB[i] + fraction * (afterRGB[i] - beforeRGB[i]);
+        arrRGB[i] = (beforeRGB[i] + fraction * (afterRGB[i] - beforeRGB[i]))
+                        .toFixed(0);
     };
-    console.log(arrRGB);
+    // console.log(arrRGB);
     return 'rgb(' + arrRGB.join(', ') + ')';
 }
 
@@ -291,27 +292,26 @@ function updateColor(paintChip, fcolor) {
     if (Array.isArray(hex)) { // multiple colors
         // TODO: cross-browserify
         document.body.ontransitionend = () => { // wait for transition to end before beginning loop
-            currPct = 0 // reset anew;
-            keyframesRule = findKeyframesRule(color + 'Loop');
-            let secsPerLoop = 2.5 * keyframesRule.cssRules.length;
-            timer = window.setInterval(() => {
-                // increment current percentage thru keyrule
-                currPct = (currPct < nticks)? currPct + 1 : 0;
-                // console.log('i: ', currPct);
-            }, secsPerLoop * 1000 / nticks); // milliseconds per loop tick = (s / loop) * (1000 ms / s) * (1 cycle / 100 ticks)
 
+            currPct = 0; // reset anew;
+            keyframesRule = findKeyframesRule(color + 'Loop'); // set to relevant keyframes
+            let secsPerLoop = 2.5 * keyframesRule.cssRules.length;
+
+            document.body.onanimationstart = () => {
+                // increment current percentage thru keyrule
+                timer = window.setInterval(() => {
+                    currPct = (currPct < nticks)? currPct + 1 : 0;
+                    // console.log('i: ', currPct);
+                }, secsPerLoop * 1000 / nticks); // milliseconds per loop tick = (s / loop) * (1000 ms / s) * (1 cycle / 100 ticks)
+            };
             document.body.classList.add(color + 'Loopy');
             document.body.style.animationPlayState = 'running';
+            document.body.ontransitionend = () => {};
+            console.log('running');
         };
         transitionBgColor(hex[0]);
-        // currPct = 0 // reset anew;
-        // keyframesRule = findKeyframesRule(color + 'Loop');
-        // let secsPerLoop = 2.5 * keyframesRule.cssRules.length;
-        // window.setInterval(() => {
-        //     // increment current percentage thru keyrule
-        //     currPct = (currPct < 100)? currPct + 1 : 0;
-        // }, secsPerLoop * 10 - 1); // milliseconds per loop tick = (s / loop) * (1000 ms / s) * (1 cycle / 100 ticks)
-        //
+
+        // d3
         // transitionBgColor(hex[0])
         //     .on("end", function() { // wait for transition to end before beginning loop
         //             document.body.classList.add(color + 'Loopy');
@@ -319,42 +319,87 @@ function updateColor(paintChip, fcolor) {
         //     });
     }
     else {
+        // document.body.ontransitionend = () => {}; // remove hook
+        window.clearInterval(timer);
+        document.body.className = document.body.className
+            .replace(/ *[a-z]*Loopy */, '');      // remove, no matter the name of the `color`Loop
+
         if (document.body.style.animationPlayState == 'running') {
-            document.body.classList.add('notransition'); // temporarily disable
 
-            document.body.style.animationPlayState = 'paused';
-            document.body.ontransitionend = () => {}; // remove hook
-            // window.setInterval(() => {}, 0); // stop timing
-            window.clearInterval(timer);
+            // window.clearInterval(timer);
+            //
+            // window.setTimeout(() => {
+            //     document.body.style.webkitAnimationPlayState = 
+            //     document.body.style.mozAnimationPlayState = 
+            //     document.body.style.oAnimationPlayState = 
+            //     document.body.style.animationPlayState = 'paused';
+            // }, 10);
+            // document.body.style.webkitAnimationPlayState = 
+            // document.body.style.mozAnimationPlayState = 
+            // document.body.style.oAnimationPlayState = 
+            // document.body.style.animationPlayState = 'paused';
+            // document.body.style.animationPlayState = 'paused';
 
-            document.body.className = document.body.className
-                .replace(/ *[a-z]*Loopy */, '');      // remove, no matter the name of the `color`Loop
+            // document.body.className = document.body.className
+            //     .replace(/ *[a-z]*Loopy */, '');      // remove, no matter the name of the `color`Loop
 
-            console.log('preset: ', document.body.style.backgroundColor)
-            console.log('computed: ', window.getComputedStyle(document.body)['background-color']);
+            // // window.setInterval(() => {}, 0); // stop timing
+            // window.clearInterval(timer);
 
-            let frame = getClosestKeyframe(currPct / nticks * 100, keyframesRule)
-            console.log('myComputedClosest: ', frame.style.backgroundColor);
-            // document.body.style.backgroundColor = frame.style.backgroundColor;
+            // document.body.className = document.body.className
+            //     .replace(/ *[a-z]*Loopy */, '');      // remove, no matter the name of the `color`Loop
+
+            // console.log('preset: ', document.body.style.backgroundColor)
+            // console.log('computed: ', window.getComputedStyle(document.body)['background-color']);
+
+            // let frame = getClosestKeyframe(currPct / nticks * 100, keyframesRule)
+            // console.log('myComputedClosest: ', frame.style.backgroundColor);
+            // // document.body.style.backgroundColor = frame.style.backgroundColor;
 
             let rgb = computeTransitionalBgColor(currPct / nticks * 100, keyframesRule)
             console.log('myComputedTransitional: ', rgb);
 
-            // document.body.style.backgroundColor = window.getComputedStyle(document.body)['background-color'];// rgb;
+            let rgbComputed = window.getComputedStyle(document.body)['background-color'];
+            console.log('ComputedTransitional: ', rgbComputed);
 
+            document.body.ontransitionend = () => {
+                document.body.classList.remove('notransition'); // re-enable
+                //document.body.classList.remove('quicktransition'); // re-enable
+                document.body.classList.add('regtransition'); // re-enable
+                document.body.ontransitionend = () => {};
+                console.log('3: ', document.body.style);
+                transitionBgColor(hex);
+                console.log('4: ', document.body.style);
+            };
+
+            // document.body.classList.add('notransition'); // temporarily disable
+            document.body.classList.remove('regtransition');
+            document.body.classList.add('notransition'); // temporarily disable
+            // document.body.classList.add('quicktransition'); // temporarily disable
+            // console.log('1: ', document.body.style);
+            document.body.style.backgroundColor = rgb;
+            document.body.ontransitionend = () => {};
             document.body.classList.remove('notransition'); // re-enable
-
-            console.log('now set: ', document.body.style.backgroundColor);
-
-            // console.log(document.body.style.backgroundColor);
+            document.body.classList.add('regtransition'); // re-enable
+            transitionBgColor(hex);
+            // console.log('2: ', document.body.style);
+            // transitionBgColor(hex);
             // document.body.style.backgroundColor = window.getComputedStyle(document.body)['background-color'];
-            // console.log('--> ', document.body.style.backgroundColor);
-            // console.log(document.body.style);
+            // document.body.classList.remove('notransition'); // re-enable
+            // document.body.classList.remove('quicktransition'); // re-enable
+
+            // console.log('now set: ', document.body.style.backgroundColor);
+
+            // // console.log(document.body.style.backgroundColor);
+            // // console.log('--> ', document.body.style.backgroundColor);
+            // // console.log(document.body.style);
         }
-        document.body.className = document.body.className
-            .replace(/ *[a-z]*Loopy */, '');      // remove, no matter the name of the `color`Loop
+    else {
+        // document.body.ontransitionend = () => {}; // remove hook
         transitionBgColor(hex);
-    }
+    };
+    // transitionBgColor(hex);
+    };
 }
 
 
