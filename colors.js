@@ -43,10 +43,10 @@ const colormap = {
 
 
 // CSS utils
-const PREFIXES = ['',          // IE 10+, Fx29+
-                  '-moz-',     // Fx 5+ <-- insertRule in chrome doesn't like this
+const PREFIXES = ['',         // IE 10+, Fx29+
+                  '-moz-',    // Fx 5+ <-- insertRule in chrome doesn't like this
                   '-webkit-', // Safari 4+
-                  '-o-'];   // Opera 12+ <-- insertRule doesn't like this
+                  '-o-'];     // Opera 12+ <-- insertRule doesn't like this
 
 const ruleAdder = ("insertRule" in stylesheet)?
     (...args) => { stylesheet.insertRule(...args); } : // standards
@@ -58,9 +58,26 @@ function tryAddRule(...args) {
     }
     catch(err) {
         console.log('skipping rule: ', args);
-        console.log(err);
+        // console.log(err);
     }
 }
+
+// for some reason, ffox will still render -webkit-text-stroke
+// (necessary to make chrome fonts match ffox)
+usesWebkit = navigator.userAgent.toLowerCase().includes('webkit')
+if (usesWebkit) {
+    let h1s = document.getElementsByTagName('h1')
+    for (i=0; i < h1s.length; i++) {
+        h1s[i].classList.add('thicker');
+    };
+    let as = document.getElementsByTagName('a')
+    for (i=0; i < as.length; i++) {
+        if (as[i].classList.contains('dynamicHighlight')) { // text links only
+            as[i].classList.add('jankyDoubleLine');
+        };
+    };
+};
+
 
 function titlecase(s) {
     return s.charAt(0).toUpperCase() + s.substr(1).toLowerCase();
