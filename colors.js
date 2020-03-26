@@ -1,3 +1,4 @@
+var colorbox=document.getElementById("colorbox");
 var colorname=document.getElementById("colorname");
 var colorwords=document.getElementById("colorwords");
 var colorchips=document.getElementById("colorchips");
@@ -352,11 +353,9 @@ function updateColor(paintChip, fcolor) {
 
     // special case to make white show up
     let shadow = (color == 'white')? '3px 3px 7px #000000' : '';
-    colorwords.style.textShadow = shadow;
-    colorname.style.textShadow = shadow;
-    ps = document.getElementsByTagName('p');
-    Array.from(ps)
-         .forEach(p => p.style.textShadow = shadow);
+    let transition = (color == 'white')? 'text-shadow 3s' : '';
+    colorbox.style.textShadow = shadow;
+    colorbox.style.transition = transition;
 
     // reverse selection mode
     // via https://stackoverflow.com/a/3428066
