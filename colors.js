@@ -1,6 +1,7 @@
-const colorname=document.getElementById("colorname");
-const colorwords=document.getElementById("colorwords");
-const colorchips=document.getElementById("colorchips");
+var colorname=document.getElementById("colorname");
+var colorwords=document.getElementById("colorwords");
+var colorchips=document.getElementById("colorchips");
+// ^ older iOS won't let these be consts :/
 
 const stylesheet = document.styleSheets[0];
 
@@ -64,11 +65,14 @@ function tryAddRule(...args) {
 
 // for some reason, ffox will still render -webkit-text-stroke
 // (necessary to make chrome fonts match ffox)
-usesWebkit = navigator.userAgent.toLowerCase().includes('webkit')
-if (usesWebkit) {
+const userAgent = navigator.userAgent.toLowerCase()
+// const usesWebkit = userAgent.includes('webkit');
+// if (usesWebkit) {
+if (userAgent.includes('webkit')) {
     let h1s = document.getElementsByTagName('h1');
+    thickness = userAgent.includes('apple')? 'thicker' : 'thickest';
     Array.from(h1s)
-         .forEach(h1 => h1.classList.add('thicker'));
+         .forEach(h1 => h1.classList.add(thickness));
 
     let as = document.getElementsByTagName('a');
     Array.from(as)
@@ -469,10 +473,11 @@ function makePaintChip(color, hex) {
     else {
         paintChipBox.style.backgroundColor = hex;
     }
+    paintChipBox.classList.add('noSelect');
     paintChipBox.append(paintChipTransparency);
-    paintChipText.innerText = color; // + ' (' + hex + ')';
-
     paintChip.append(paintChipBox);
+
+    paintChipText.innerText = color; // + ' (' + hex + ')';
     paintChip.append(paintChipText);
 
     return paintChip;
