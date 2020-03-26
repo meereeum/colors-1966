@@ -79,6 +79,15 @@ if (userAgent.includes('webkit')) {
          .filter(a => a.classList.contains('dynamicHighlight')) // text links only
          .forEach(a => a.classList.add('jankyDoubleLine'));
 };
+if (userAgent.includes('phone')) {
+    let hoverLines = Array.from(stylesheet.cssRules)
+                          .filter(r => (!!r.selectorText) ? // some rules have no selector text
+                                       r.selectorText.startsWith('.paintChipTransparency:hover') :
+                                       null)[0]
+    // hover lines sometimes crowd out active lines
+    // (b/c phones have no real hover) -- so just get rid of these
+    hoverLines.style.background = hoverLines.style.backgroundImage = '';
+};
 
 
 function titlecase(s) {
