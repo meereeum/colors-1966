@@ -68,6 +68,14 @@ a.jankyDoubleLine:hover {
     border-bottom: 5px solid #cbeefa !important;
 }
 
+.whiteStyle {
+    text-shadow: 3px 3px 7px #000;
+    transition: text-shadow 3s;
+    -webkit-transition: text-shadow 3s;
+    -moz-transition: text-shadow 3s;
+    -o-transition: text-shadow 3s;
+}
+
 .otherFont {
     font-family: sans-serif;
 }
