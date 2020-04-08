@@ -43,11 +43,10 @@ const colormap = {
     "coral": "#f09d8a"
 };
 
-const too_light = { // map too-light colors to shadows
-    // "white": "#000 3px 3px 7px",
-    "white": "hsl(0, 0%, 40%)", // 1px 1px 10px",
-    "ecru": "hsl(32, 46%, 55%)", // 1px 1px 10px",
-    "yellow": "hsl(59, 97%, 40%)" // 1px 1px 10px"
+const too_light = { // map too-light colors to shadow colors
+    "white": "hsl(0, 0%, 40%)",
+    "ecru": "hsl(32, 46%, 55%)",
+    "yellow": "hsl(59, 97%, 40%)"
 }
 
 
@@ -359,13 +358,8 @@ function updateColor(paintChip, fcolor) {
     activate(paintChip);
 
     // special case to make white show up
-    // let TOO_LIGHT = ['white', 'ecru', 'yellow']
-    // let shadow = TOO_LIGHT.includes(color)? '3px 3px 7px #000000' : '';
-    // let transition = TOO_LIGHT.includes(color)? 'text-shadow 3s' : '';
-    let shadow = Object.keys(too_light).includes(color)? `${too_light[color]} 1px 1px 10px` : '';
+    let shadow     = Object.keys(too_light).includes(color)? `${too_light[color]} 1px 1px 10px` : '';
     let transition = Object.keys(too_light).includes(color)? 'text-shadow 3s' : '';
-    // let shadow = (color == 'white')? '3px 3px 7px #000000' : '';
-    // let transition = (color == 'white')? 'text-shadow 3s' : '';
     colorbox.style.textShadow = shadow;
     colorbox.style.transition = transition;
 
