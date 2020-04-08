@@ -359,9 +359,8 @@ function updateColor(paintChip, fcolor) {
 
     // special case to make white show up
     let shadow     = Object.keys(too_light).includes(color)? `${too_light[color]} 1px 1px 10px` : '';
-    let transition = Object.keys(too_light).includes(color)? 'text-shadow 3s' : '';
+    // let transition = Object.keys(too_light).includes(color)? 'text-shadow 3s' : '';
     colorbox.style.textShadow = shadow;
-    colorbox.style.transition = transition;
 
     // reverse selection mode
     // via https://stackoverflow.com/a/3428066
